@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>kasei</groupId>
+    <artifactId>Neo4j</artifactId>
+    <version>0.0.1</version>
+
+    <name>Neo4j</name>
+    <description>Demo project for Neo4j</description>
+    <url>https://neo4j.kasei.haku</url>
+
+    <packaging>jar</packaging>
+
+
+
+    <properties>
+        <!-- env.x 开头的变量，都是引用环境变量-->
+        <var.env>${env.PATH}</var.env>
+        <!--
+        project.x 开头的变量表示当前 pom.xml 文件(包括父 pom )中包含该路径
+        project.basedir == <project><basedir>/opt/Git/LocalRepository</basedir></project>
+        -->
+        <var.project>${project.basedir}</var.project>
+
+        <!-- settings.x 表示 settings.xml 包含的元素 -->
+        <var.settings>${settings.offline}</var.settings>
+
+        <!--java.x 表示 java.lang.System.getProperties() 能访问到的属性-->
+        <var.java>${java.version}</var.java>
+
+
+        <!--x 表示当前 pom.xml <properties> 中包含的属性 -->
+        <junit.version>5.6.1</junit.version>
+        <spring.version>Cairo-SR8</spring.version>
+        <neo4j.version>4.0.3</neo4j.version><!-- 不能超过 3.x.x 否则 SpringData 不兼容 -->
+        <neo4j.java.driver.version>4.0.1</neo4j.java.driver.version>
+
+        <!-- 其他防止出现警告信息的配置 -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <basedir>.</basedir>
+    </properties>
+
+
+
+    <build>
+
+        <defaultGoal>package</defaultGoal><!-- 默认的执行 goal 为 install ；即 shell> mvn 等价于 shell> mvn install -->
+        <finalName>${project.artifactId}-${project.version}</finalName><!-- Maven package 打包出来的文件名 -->
+
+
+
+
+        <plugins>
+            <!-- TODO Maven Wrapper -->
+            <plugin>
+                <groupId>io.takari</groupId>
+                <artifactId>maven</artifactId>
+                <version>0.7.7</version>
+            </plugin>
+            <!-- TODO Maven clean 配置 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>auto-clean</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- TODO Maven compile 配置 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.12</version>
+                        </path>
+                    </annotationProcessorPaths>
+
+                    <buildDirectory>.</buildDirectory>
+                    <debug>true</debug>
+                    <!--<debuglevel>lines, vars, source</debuglevel> 相当于 shell> javac -g:{lines, vars, source} 这东西就是个坑，不应该存在 -->
+                    <source>11</source><!-- 源码使用的 jdk 版本-->
+                    <target>11</target><!-- 编译后兼容的 jdk 版本-->
+
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
+                    <parameters>true</parameters><!-- 生成方法的 metadata -->
+                    <encoding>UTF-8</encoding><!--源码文件字符编码格式-->
+                    <outputFileName>${project.build.finalName}</outputFileName>
+                    <skip>true</skip><!-- 跳过测试 -->
+                    <!-- TODO 包含要编译的文件，路径就是包开始路径 kasei/security，且不能加 ./kasei/security
+                    includes 和 excludes 具体逻辑没有搞清楚，
+                    好像先执行 includes 然后 excludes 排除 includes 引入的文件，
+                    includes 不存在时，默认引入 src/main/java 路径下的所有文件
+                     -->
+                    <includes>
+                        <!-- <include>kasei/security/extra/**/*.java</include> -->
+                        <!-- <include>/opt/Git/LocalRepository/SpringSecurity/*.java</include> -->
+                    </includes>
+                    <!-- TODO 指定不编译的文件，路径就是包开始路径 kasei/security，且不能加 ./kasei/security;  -->
+                    <excludes>
+                        <exclude>kasei/security/noexist/**/*.java</exclude>
+                    </excludes>
+
+
+
+                </configuration>
+
+            </plugin>
+
+            <!-- TODO Maven test 配置 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M4</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/Abstract*.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+        <!-- 添加资源文件到包中 -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.spring.platform</groupId>
+                <artifactId>platform-bom</artifactId>
+                <version>${spring.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
+    <dependencies>
+
+        <!-- TODO Test -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+
+
+        <!-- TODO Convenient Develop Tool Kit -->
+        <!-- 此处的 lombok 是用于在代码编辑时能引用到 lombok 的注解 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.12</version>
+            <scope>provided</scope>
+        </dependency>
+
+
+
+        <!-- TODO Neo4j -->
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j</artifactId>
+            <version>${neo4j.version}</version>
+        </dependency>
+        <dependency><!-- 让嵌入式 neo4j 可以在网页端访问 -->
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-bolt</artifactId>
+            <version>${neo4j.version}</version>
+            <!--<scope>test</scope>-->
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>${neo4j.java.driver.version}</version>
+        </dependency>
+
+        <!-- TODO Something -->
+
+
+
+
+    </dependencies>
+
+
+
+</project>
